@@ -995,28 +995,6 @@ export default function App() {
     }
   };
 
-  // Auto-login effect for existing sessions
-  useEffect(() => {
-    const checkSession = async () => {
-      const savedToken = localStorage.getItem('pos_token');
-      const savedTenantId = localStorage.getItem('pos_active_tenant_id');
-      const savedRole = localStorage.getItem('pos_active_role');
-
-      if (savedToken && savedTenantId) {
-        try {
-          // If we have a token, we should fetch the tenant from SQL
-          const tenant = await apiService.getTenant(savedTenantId);
-          setActiveTenant(tenant);
-          setActiveRole(savedRole as any);
-        } catch (err) {
-          console.warn('Sesi kadaluwarsa, silakan login kembali.');
-          apiService.logout();
-        }
-      }
-    };
-    checkSession();
-  }, []);
-
   const handleExitTenant = () => {
     setActiveTenant(null);
     setActiveRole(null);
@@ -1171,6 +1149,18 @@ export default function App() {
     setQuizScore(null);
     setCouponCode(null);
   };
+
+  // Guard untuk mencegah layar blank saat inisialisasi
+  if (authLoading || isInitializing) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center gap-4">
+        <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin" />
+        <p className="text-indigo-200 font-black text-xs uppercase tracking-widest animate-pulse">
+          Menyiapkan Sesi Kasir...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-3 font-sans relative overflow-hidden" id="main-frame-wrapper">
