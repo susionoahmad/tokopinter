@@ -4,7 +4,8 @@
  * Gateway for communication between Frontend (Vercel) and Backend (GCP VM SQL)
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Pastikan tidak ada trailing slash di akhir base URL
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
 
 // Helper to get headers with Bearer token
 const getHeaders = () => {

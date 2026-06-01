@@ -12,7 +12,7 @@ async function seed() {
   const client = await pool.connect();
   try {
     console.log('Connected to database successfully. Checking tables...');
-    
+
     // 1. Read and run schema from database.sql if tenants table does not exist
     const tableCheck = await client.query(`
       SELECT EXISTS (
@@ -21,7 +21,7 @@ async function seed() {
         AND table_name = 'tenants'
       );
     `);
-    
+
     const tenantsTableExists = tableCheck.rows[0].exists;
     if (!tenantsTableExists) {
       console.log('tenants table does not exist. Running database.sql schema...');
@@ -52,7 +52,7 @@ async function seed() {
     };
 
     console.log(`Inserting/updating test tenant: ${tenantId}...`);
-    
+
     // Check if the 'cashiers' column exists in tenants table. In database.sql, cashiers is not a column, 
     // it was assumed to be part of categories or another JSON field, but server/index.js line 74 says:
     // "const cashiers = tenant.cashiers || [];"
@@ -81,12 +81,16 @@ async function seed() {
     // Let's add the column `cashiers JSONB DEFAULT '[]'` to the `tenants` table to support multiple cashiers in SQL!
     // Let's make sure it is added. We can run an `ALTER TABLE tenants ADD COLUMN IF NOT EXISTS cashiers JSONB DEFAULT '[]';`
     // Let's include that in the seed script! That is extremely robust!
-    
+
     await client.query(`
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(20) DEFAULT 'trial';
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_package VARCHAR(20) DEFAULT 'monthly';
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMP WITH TIME ZONE;
       ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMP WITH TIME ZONE;
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tax_enabled BOOLEAN DEFAULT FALSE;
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tax_percentage NUMERIC(5,2) DEFAULT 0;
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tax_method VARCHAR(20) DEFAULT 'exclude';
+      ALTER TABLE tenants ADD COLUMN IF NOT EXISTS cashiers JSONB DEFAULT '[]';
     `);
     console.log('Ensured tenants table has subscription columns.');
 

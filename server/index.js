@@ -10,11 +10,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-pos-key';
 
+// Basic environment validation for production
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || !process.env.DATABASE_URL)) {
+  console.error('FATAL ERROR: JWT_SECRET or DATABASE_URL is not defined in production.');
+  process.exit(1);
+}
+
 // Middleware
 app.use(cors({
   // Masukkan domain Vercel Anda di sini untuk keamanan ekstra
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://nama-proyek-anda.vercel.app', 'https://domainanda.com']
+    ? ['https://sistem-pos-kasir.vercel.app', 'https://kalkulatorin.com'] // Ganti dengan domain Vercel asli Anda
     : true,
   credentials: true
 }));
