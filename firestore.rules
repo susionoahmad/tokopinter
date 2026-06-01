@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global utility helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperadmin() {
+      return isSignedIn() && (
+        request.auth.uid == 'QfVRDztL4maEZNtDQj5RRHcjUsB3' ||
+        request.auth.token.email == 'susiono.ahmad@gmail.com'
+      );
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && (request.auth.uid == userId || isSuperadmin());
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity validation functions
+    function isValidUser(data) {
+      return data.uid is string && (data.uid == request.auth.uid || isSuperadmin())
+          && data.email is string && data.email.size() <= 256;
+    }
+
+    function isValidProduct(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && data.category is string && data.category.size() <= 50
+          && data.price is number && data.price >= 0
+          && data.cost is number && data.cost >= 0
+          && data.stock is number && data.stock >= 0
+          && data.minStock is number && data.minStock >= 0;
+    }
+
+    function isValidTransaction(data) {
+      return data.id is string && data.id.size() <= 128
+          && data.timestamp is string && data.timestamp.size() <= 40
+          && data.items is list
+          && data.totalPrice is number && data.totalPrice >= 0
+          && data.totalCost is number && data.totalCost >= 0
+          && data.profit is number
+          && data.paymentMethod is string && (data.paymentMethod == 'Tunai' || data.paymentMethod == 'QRIS' || data.paymentMethod == 'Kartu')
+          && data.amountPaid is number && data.amountPaid >= 0
+          && data.change is number && data.change >= 0;
+    }
+
+    // Users Collection (Strict Owner Isolation)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /users/{userId}/products/{productId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isOwner(userId) && isValidId(productId) && isValidProduct(incoming()) && incoming().id == existing().id;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(transactionId) && isValidTransaction(incoming());
+      allow update: if isOwner(userId) && isValidId(transactionId) && isValidTransaction(incoming()) && incoming().id == existing().id;
+      allow delete: if isOwner(userId);
+    }
+
+    // Tenants Collection (Smooth, error-free list & read/write for verified accounts)
+    match /tenants/{tenantId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(tenantId);
+      allow update: if isSignedIn();
+      allow delete: if isSuperadmin();
+    }
+
+    // Tenants Subcollections (Products & Transactions under tenants)
+    match /tenants/{tenantId}/products/{productId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(productId) && isValidProduct(incoming());
+      allow update: if isSignedIn() && isValidId(productId) && isValidProduct(incoming()) && incoming().id == existing().id;
+      allow delete: if isSignedIn();
+    }
+
+    match /tenants/{tenantId}/transactions/{transactionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(transactionId) && isValidTransaction(incoming());
+      allow update: if isSignedIn() && isValidId(transactionId) && isValidTransaction(incoming()) && incoming().id == existing().id;
+      allow delete: if isSignedIn();
+    }
+
+    match /tenants/{tenantId}/stockLogs {
+      allow read, list: if isSignedIn();
+    }
+    match /tenants/{tenantId}/stockLogs/{stockLogId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

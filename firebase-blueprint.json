@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Information about the registered store owner",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Tenant": {
+      "title": "Tenant",
+      "description": "Multi-tenant SaaS store configuration details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "ownerEmail": { "type": "string" },
+        "adminPin": { "type": "string" },
+        "cashierPin": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "ownerUid", "ownerEmail", "adminPin", "cashierPin", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Stock items sold in the POS application under a specific user or tenant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "cost": { "type": "number" },
+        "stock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "barcode": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "price", "cost", "stock", "minStock"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Completed checkout payment records under a specific user or tenant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "totalCost": { "type": "number" },
+        "profit": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "amountPaid": { "type": "number" },
+        "change": { "type": "number" }
+      },
+      "required": ["id", "timestamp", "items", "totalPrice", "totalCost", "profit", "paymentMethod", "amountPaid", "change"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Main user document for store owner"
+    },
+    "/users/{userId}/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products owned by this user"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of checkout transactions made by this user"
+    },
+    "/tenants/{tenantId}": {
+      "schema": "Tenant",
+      "description": "Main tenant document for multi-tenant SaaS store"
+    },
+    "/tenants/{tenantId}/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of products owned by this tenant"
+    },
+    "/tenants/{tenantId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of transactions made under this tenant"
+    }
+  }
+}

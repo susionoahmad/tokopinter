@@ -1,0 +1,6 @@
+{
+  "name": "Sistem POS Kasir",
+  "description": "Aplikasi Point of Sale Android untuk kasir toko retail kecil dengan manajemen stok barang dan laporan penjualan real-time.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
