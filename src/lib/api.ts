@@ -5,7 +5,14 @@
  */
 
 // Pastikan tidak ada trailing slash di akhir base URL
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+const API_BASE_URL = (() => {
+  const envUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').trim().replace(/\/$/, '');
+  // Auto-append /api if it's missing from a custom domain but present in our routes
+  if (envUrl.startsWith('http') && !envUrl.endsWith('/api') && !envUrl.includes('/api/')) {
+    return `${envUrl}/api`;
+  }
+  return envUrl;
+})();
 
 // Helper to get headers with Bearer token
 const getHeaders = () => {

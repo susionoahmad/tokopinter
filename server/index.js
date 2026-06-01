@@ -20,7 +20,7 @@ if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || !proces
 app.use(cors({
   // Masukkan domain Vercel Anda di sini untuk keamanan ekstra
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://sistem-pos-kasir.vercel.app', 'https://kalkulatorin.com'] // Ganti dengan domain Vercel asli Anda
+    ? ['https://tokopinter.vercel.app', 'https://kalkulatorin.com'] // Ganti dengan domain Vercel asli Anda
     : true,
   credentials: true
 }));
