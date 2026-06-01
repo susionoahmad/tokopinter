@@ -140,14 +140,6 @@ async function seed() {
     `);
     console.log('Ensured kas_mutations table exists.');
 
-    // Seed default Kas Besar balance for TOKO-DEMO (Rp 10.000.000 starting cash)
-    await client.query(`
-      INSERT INTO kas_besar (tenant_id, balance)
-      VALUES ('TOKO-DEMO', 10000000)
-      ON CONFLICT (tenant_id) DO NOTHING;
-    `);
-    console.log('Seeded initial Kas Besar balance for TOKO-DEMO.');
-
     const query = `
       INSERT INTO tenants (id, name, owner_email, admin_pin, categories, cashiers, subscription_status, subscription_package, trial_ends_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -177,6 +169,15 @@ async function seed() {
 
     const result = await client.query(query, values);
     console.log('Seeded tenant successfully:', result.rows[0]);
+
+    // Seed default Kas Besar balance for TOKO-DEMO (Rp 10.000.000 starting cash)
+    // Dijalankan SETELAH tenant terbuat untuk mematuhi Foreign Key Constraint
+    await client.query(`
+      INSERT INTO kas_besar (tenant_id, balance)
+      VALUES ('TOKO-DEMO', 10000000)
+      ON CONFLICT (tenant_id) DO NOTHING;
+    `);
+    console.log('Seeded initial Kas Besar balance for TOKO-DEMO.');
 
   } catch (err) {
     console.error('Error seeding database:', err.message);
