@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { execSync } = require('child_process');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
@@ -9,6 +10,31 @@ const pool = new Pool({
 
 async function seed() {
   console.log('Using DATABASE_URL:', process.env.DATABASE_URL.replace(/:[^@]+@/, ':***@'));
+
+  // --- SISTEM BACKUP OTOMATIS SEBELUM SEEDING ---
+  const runBackup = () => {
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupDir = path.join(__dirname, 'backups');
+      const backupFile = path.join(backupDir, `pre_seed_backup_${timestamp}.sql`);
+
+      if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir, { recursive: true });
+      }
+
+      console.log(`Menjalankan backup database ke: ${backupFile}...`);
+      // pg_dump mendukung connection string langsung.
+      // Di VM GCP (Linux), pastikan postgresql-client terinstal (sudo apt install postgresql-client).
+      execSync(`pg_dump "${process.env.DATABASE_URL}" -f "${backupFile}"`);
+      console.log('✅ Backup berhasil dibuat.');
+    } catch (error) {
+      console.warn('⚠️ Gagal membuat backup otomatis:', error.message);
+      console.log('Melanjutkan proses seeding/migrasi tanpa backup...');
+    }
+  };
+
+  runBackup();
+
   const client = await pool.connect();
   try {
     console.log('Connected to database successfully. Checking tables...');
