@@ -23,9 +23,11 @@ async function seed() {
       }
 
       console.log(`Menjalankan backup database ke: ${backupFile}...`);
-      // pg_dump mendukung connection string langsung.
+      // Untuk Windows, pastikan path ke pg_dump.exe sudah ada di PATH atau gunakan path absolut.
+      // Contoh path absolut di Windows: "C:\\Program Files\\PostgreSQL\\16\\bin\\pg_dump.exe"
       // Di VM GCP (Linux), pastikan postgresql-client terinstal (sudo apt install postgresql-client).
-      execSync(`pg_dump "${process.env.DATABASE_URL}" -f "${backupFile}"`);
+      const pgDumpCommand = process.env.PG_DUMP_PATH || 'pg_dump'; // Gunakan variabel env atau fallback ke 'pg_dump'
+      execSync(`${pgDumpCommand} "${process.env.DATABASE_URL}" -f "${backupFile}"`);
       console.log('✅ Backup berhasil dibuat.');
     } catch (error) {
       console.warn('⚠️ Gagal membuat backup otomatis:', error.message);
