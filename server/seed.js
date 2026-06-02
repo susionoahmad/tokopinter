@@ -13,31 +13,20 @@ async function seed() {
   try {
     console.log('Connected to database successfully. Checking tables...');
 
-    // 1. Read and run schema from database.sql if tenants table does not exist
-    const tableCheck = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'tenants'
-      );
-    `);
-
-    const tenantsTableExists = tableCheck.rows[0].exists;
-    if (!tenantsTableExists) {
-      console.log('tenants table does not exist. Running database.sql schema...');
-      const sqlPath = path.join(__dirname, '..', 'database.sql');
-      if (fs.existsSync(sqlPath)) {
-        const sqlSchema = fs.readFileSync(sqlPath, 'utf8');
-        await client.query(sqlSchema);
-        console.log('Database schema created successfully.');
-      } else {
-        console.warn('database.sql not found at:', sqlPath);
-      }
+    // 1. Jalankan skema dasar dari database.sql. 
+    // File database.sql menggunakan "IF NOT EXISTS" sehingga aman dijalankan berulang kali.
+    // Ini memastikan tabel-tabel baru atau indeks baru di masa depan tetap terbuat tanpa menghapus data.
+    const sqlPath = path.join(__dirname, '..', 'database.sql');
+    if (fs.existsSync(sqlPath)) {
+      console.log('Menjalankan verifikasi skema dari database.sql...');
+      const sqlSchema = fs.readFileSync(sqlPath, 'utf8');
+      await client.query(sqlSchema);
+      console.log('Verifikasi skema database selesai.');
     } else {
-      console.log('tenants table already exists. Skipping schema creation.');
+      console.warn('File database.sql tidak ditemukan di:', sqlPath);
     }
 
-    // 2. Insert test tenant
+    // 2. Migrasi Kolom: Menambahkan kolom yang mungkin belum ada di database lama
     const tenantId = 'TOKO-DEMO';
     const testTenant = {
       id: tenantId,
@@ -94,10 +83,19 @@ async function seed() {
     `);
     console.log('Ensured tenants table has subscription columns.');
 
-    // Create / Re-create cashier_sessions table to align structure
+    // Migrasi untuk tabel transactions agar sinkron dengan kebutuhan API terbaru
     await client.query(`
-      DROP TABLE IF EXISTS cashier_sessions CASCADE;
-      CREATE TABLE cashier_sessions (
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS session_id VARCHAR(50);
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS tax NUMERIC(15,2) DEFAULT 0;
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS tax_percent NUMERIC(5,2) DEFAULT 0;
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS discount_percent NUMERIC(5,2) DEFAULT 0;
+      ALTER TABLE transactions ADD COLUMN IF NOT EXISTS cashier_name VARCHAR(100);
+    `);
+    console.log('Ensured transactions table has all required columns.');
+
+    // Ensure cashier_sessions table exists and has all required columns without dropping data
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS cashier_sessions (
           id VARCHAR(50) PRIMARY KEY,
           tenant_id VARCHAR(50) REFERENCES tenants(id) ON DELETE CASCADE,
           cashier_uid VARCHAR(100) NOT NULL,
@@ -112,6 +110,15 @@ async function seed() {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Add missing columns if table already existed from older versions
+    await client.query(`
+      ALTER TABLE cashier_sessions ADD COLUMN IF NOT EXISTS total_cash_sales DECIMAL(15, 2) DEFAULT 0;
+      ALTER TABLE cashier_sessions ADD COLUMN IF NOT EXISTS total_qris DECIMAL(15, 2) DEFAULT 0;
+      ALTER TABLE cashier_sessions ADD COLUMN IF NOT EXISTS total_card DECIMAL(15, 2) DEFAULT 0;
+      ALTER TABLE cashier_sessions ADD COLUMN IF NOT EXISTS opening_balance DECIMAL(15, 2) NOT NULL DEFAULT 0;
+    `);
+
     console.log('Ensured cashier_sessions table is fully updated.');
 
     // Create kas_besar table

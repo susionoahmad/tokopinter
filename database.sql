@@ -3,7 +3,7 @@
 -- Deskripsi: Multi-tenant POS system with audit logs and relational transactions
 
 -- 1. Tabel Tenants (Data Toko)
-CREATE TABLE tenants (
+CREATE TABLE IF NOT EXISTS tenants (
     id VARCHAR(50) PRIMARY KEY, -- Contoh: TOKO-AIUQ0
     name VARCHAR(255) NOT NULL,
     owner_email VARCHAR(255) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE tenants (
 );
 
 -- 2. Tabel Products (Katalog Barang)
-CREATE TABLE products (
+CREATE TABLE IF NOT EXISTS products (
     id VARCHAR(50) PRIMARY KEY,
     tenant_id VARCHAR(50) REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
@@ -45,13 +45,17 @@ CREATE TABLE products (
 );
 
 -- 3. Tabel Transactions (Header Penjualan)
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
     id VARCHAR(50) PRIMARY KEY,
     tenant_id VARCHAR(50) REFERENCES tenants(id) ON DELETE CASCADE,
     timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
     total_price DECIMAL(15, 2) NOT NULL,
     total_cost DECIMAL(15, 2) NOT NULL,
     profit DECIMAL(15, 2) NOT NULL,
+    tax DECIMAL(15, 2) DEFAULT 0,
+    tax_percent DECIMAL(5, 2) DEFAULT 0,
+    discount_percent DECIMAL(5, 2) DEFAULT 0,
+    session_id VARCHAR(50),
     payment_method VARCHAR(50) NOT NULL, -- Tunai, QRIS, Kartu
     amount_paid DECIMAL(15, 2) NOT NULL,
     change DECIMAL(15, 2) NOT NULL,
@@ -61,7 +65,7 @@ CREATE TABLE transactions (
 
 -- 4. Tabel Transaction Items (Detail Barang terjual)
 -- Inilah kelebihan SQL, kita bisa memisahkan item untuk laporan yang lebih detail
-CREATE TABLE transaction_items (
+CREATE TABLE IF NOT EXISTS transaction_items (
     id SERIAL PRIMARY KEY,
     transaction_id VARCHAR(50) REFERENCES transactions(id) ON DELETE CASCADE,
     product_id VARCHAR(50),
@@ -72,7 +76,7 @@ CREATE TABLE transaction_items (
 );
 
 -- 5. Tabel Stock Logs (Audit Perubahan Stok)
-CREATE TABLE stock_logs (
+CREATE TABLE IF NOT EXISTS stock_logs (
     id VARCHAR(50) PRIMARY KEY,
     tenant_id VARCHAR(50) REFERENCES tenants(id) ON DELETE CASCADE,
     product_id VARCHAR(50) REFERENCES products(id) ON DELETE CASCADE,
@@ -85,7 +89,7 @@ CREATE TABLE stock_logs (
 );
 
 -- 6. Tabel Cashier Sessions (Shift Kasir)
-CREATE TABLE cashier_sessions (
+CREATE TABLE IF NOT EXISTS cashier_sessions (
     id VARCHAR(50) PRIMARY KEY,
     tenant_id VARCHAR(50) REFERENCES tenants(id) ON DELETE CASCADE,
     cashier_uid VARCHAR(100) NOT NULL,
@@ -101,14 +105,14 @@ CREATE TABLE cashier_sessions (
 );
 
 -- 7. Tabel Kas Besar (Keuangan Owner)
-CREATE TABLE kas_besar (
+CREATE TABLE IF NOT EXISTS kas_besar (
     tenant_id VARCHAR(50) PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
     balance DECIMAL(15, 2) NOT NULL DEFAULT 0,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 8. Tabel Kas Mutations (Catatan Aliran Kas)
-CREATE TABLE kas_mutations (
+CREATE TABLE IF NOT EXISTS kas_mutations (
     id VARCHAR(50) PRIMARY KEY,
     tenant_id VARCHAR(50) REFERENCES tenants(id) ON DELETE CASCADE,
     type VARCHAR(20) NOT NULL, -- 'MASUK' | 'KELUAR'
@@ -121,7 +125,7 @@ CREATE TABLE kas_mutations (
 );
 
 -- 9. Tabel Login Logs (Audit Trail Keamanan)
-CREATE TABLE login_logs (
+CREATE TABLE IF NOT EXISTS login_logs (
     id SERIAL PRIMARY KEY,
     tenant_id VARCHAR(50),
     ip_address VARCHAR(45),
@@ -132,6 +136,6 @@ CREATE TABLE login_logs (
 );
 
 -- Indexing untuk mempercepat query multi-tenant
-CREATE INDEX idx_products_tenant ON products(tenant_id);
-CREATE INDEX idx_transactions_tenant ON transactions(tenant_id);
-CREATE INDEX idx_stock_logs_product ON stock_logs(product_id);
+CREATE INDEX IF NOT EXISTS idx_products_tenant ON products(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_tenant ON transactions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_stock_logs_product ON stock_logs(product_id);

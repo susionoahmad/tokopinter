@@ -57,6 +57,16 @@ pool.query('SELECT NOW()', (err, res) => {
       else console.log('Ensured transactions table has tax column.');
     });
 
+    pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS tax_percent NUMERIC(5,2) DEFAULT 0', (alterErr) => {
+      if (alterErr) console.error('Error adding tax_percent column:', alterErr);
+      else console.log('Ensured transactions table has tax_percent column.');
+    });
+
+    pool.query('ALTER TABLE transactions ADD COLUMN IF NOT EXISTS discount_percent NUMERIC(5,2) DEFAULT 0', (alterErr) => {
+      if (alterErr) console.error('Error adding discount_percent column:', alterErr);
+      else console.log('Ensured transactions table has discount_percent column.');
+    });
+
     // Ensure login_logs table exists
     pool.query(`
       CREATE TABLE IF NOT EXISTS login_logs (

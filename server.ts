@@ -36,7 +36,7 @@ app.post("/api/gemini/velocity-analysis", async (req: any, res: any) => {
 
   // Calculate actual sales metrics per product in the last 30 days
   const velocityMap: Record<string, { name: string; category: string; stock: number; minStock: number; sold30d: number }> = {};
-  
+
   // Initialize map
   products.forEach((p: any) => {
     velocityMap[p.id] = {
@@ -138,7 +138,7 @@ app.post("/api/gemini/velocity-analysis", async (req: any, res: any) => {
     });
   } catch (error: any) {
     console.warn("Gemini stock velocity analysis failed, providing fallback analysis:", error.message);
-    
+
     // Graceful fallback: Generate basic analysis locally
     const fallbackInsights = calculatedData.map((item: any) => {
       let velocityGrade = 'Tidak Ada Penjualan';
@@ -196,7 +196,8 @@ async function bootstrap() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    // Gunakan __dirname untuk memastikan path relatif terhadap file ini
+    const distPath = path.resolve(__dirname, 'dist');
     app.use(express.static(distPath));
     app.get('*', (req: any, res: any) => {
       res.sendFile(path.join(distPath, 'index.html'));
