@@ -1,8 +1,22 @@
 {
-    "rewrites": [
+    "routes": [
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "/sw\\.js",
+            "dest": "/sw.js",
+            "headers": { "Content-Type": "application/javascript" }
+        },
+        {
+            "src": "/manifest\\.json",
+            "dest": "/manifest.json",
+            "headers": { "Content-Type": "application/manifest+json" }
+        },
+        {
+            "src": "/(.*\\.(js|mjs|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|json))",
+            "dest": "/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
     ]
 }
